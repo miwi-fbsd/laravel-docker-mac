@@ -1,0 +1,53 @@
+version: "3"
+
+services:
+  web:
+    container_name: fuck-application
+    build:
+      context: .
+      dockerfile: '.docker/php/Dockerfile'
+    image: fuck
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PASSWORD: secret
+      DB_DATABASE: database
+      DB_USERNAME: user
+    tty: true
+    depends_on:
+      - db
+    volumes:
+      - ./:/var/www
+      - .docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+
+  db:
+    image: mariadb:latest
+    container_name: fuck-database
+    ports:
+      - "33060:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: database
+      MYSQL_USER: user
+      MYSQL_PASSWORD: secret
+    volumes:
+    - dbdata:/var/lib/mysql
+
+  nginx:
+    build:
+      context: .
+      dockerfile: '.docker/nginx/Dockerfile'
+    image: fuck-nginx
+    container_name: fuck-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www
+      - .docker/nginx/conf.d/:/etc/nginx/conf.d/
+    depends_on:
+      - web
+
+volumes:
+  dbdata:
+    driver: local
